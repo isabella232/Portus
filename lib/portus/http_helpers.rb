@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "net/http"
+require "openssl"
 require "portus/errors"
 require "portus/request_error"
 
@@ -161,6 +162,7 @@ module Portus
 
       options = {
         use_ssl:      uri.scheme == "https",
+        verify_mode:  OpenSSL::SSL::VERIFY_NONE, # TODO CONFIG
         open_timeout: open.to_i,
         read_timeout: read.to_i
       }

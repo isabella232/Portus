@@ -10,12 +10,20 @@ services:
       - PORTUS_PUMA_HOST=0.0.0.0:3000
       - PORTUS_CHECK_SSL_USAGE_ENABLED=false
       - PORTUS_SECURITY_CLAIR_SERVER=http://clair:6060
+      - PORTUS_SECURITY_ANCHORE_SERVER=http://anchore:8228
 
       - CCONFIG_PREFIX=PORTUS
 
       - PORTUS_DB_HOST=db
       - PORTUS_DB_PASSWORD=portus
       - PORTUS_DB_POOL=5
+
+      # - PORTUS_SIGNUP_ENABLED=false
+      # - PORTUS_OAUTH_LOCAL_LOGIN_ENABLED=false
+      - PORTUS_OAUTH_OPENID_CONNECT_ENABLED=true
+      - PORTUS_OAUTH_OPENID_CONNECT_ISSUER=https://banzai-dex.serveo.net/dex
+      - PORTUS_OAUTH_OPENID_CONNECT_IDENTIFIER=portus
+      - PORTUS_OAUTH_OPENID_CONNECT_SECRET=ZXhhbXBsZS1hcHAtc2VjcmV0
 
       - RAILS_SERVE_STATIC_FILES=true
     ports:
@@ -27,6 +35,17 @@ services:
     volumes:
       - .:/srv/Portus
 
+  dex:
+    image: quay.io/dexidp/dex:v2.19.0
+    command: serve /dex.yml
+    ports:
+      - 5556:5556
+    volumes:
+      - ./dex.yml:/dex.yml
+    environment:
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
+
   background:
     image: opensuse/portus:development
     entrypoint: bundle exec rails runner /srv/Portus/bin/background.rb
@@ -36,7 +55,8 @@ services:
     environment:
       - PORTUS_MACHINE_FQDN_VALUE=${MACHINE_FQDN}
       - PORTUS_SECURITY_CLAIR_SERVER=http://clair:6060
-
+      - PORTUS_SECURITY_ANCHORE_SERVER=http://anchore:8228
+ 
       # Theoretically not needed, but cconfig's been buggy on this...
       - CCONFIG_PREFIX=PORTUS
 
@@ -47,6 +67,8 @@ services:
       - .:/srv/Portus
     links:
       - db
+    external_links:
+      - portus:portus.localhost.banzaicloud.io
 
   webpack:
     image: kkarczmarczyk/node-yarn:latest
@@ -55,8 +77,25 @@ services:
     volumes:
       - .:/srv/Portus
 
+  # The registry has to be registered with anchore
+  # http --auth admin:foobar localhost:8228/v1/registries < anchore-registry.json
+  anchore:
+    image: anchore/anchore-engine:v0.5.0
+    depends_on:
+        - postgres
+    environment:
+        - ANCHORE_HOST_ID=dockerhostid-anchore
+        - ANCHORE_ENDPOINT_HOSTNAME=anchore
+    ports:
+        - "8228:8228"
+        - "8338:8338"
+    volumes:
+        - ./examples/compose/anchore/config.yml:/config/config.yaml:z
+    external_links:
+      - portus:portus.localhost.banzaicloud.io
+
   clair:
-    image: quay.io/coreos/clair:v2.0.2
+    image: quay.io/coreos/clair:v2.0.9
     restart: unless-stopped
     depends_on:
       - postgres
@@ -67,21 +106,25 @@ services:
     volumes:
       - /tmp:/tmp
       - ./examples/compose/clair/clair.yml:/clair.yml
-    command: [-config, /clair.yml]
+    command: [-config, /clair.yml, -log-level=debug]
 
   db:
     image: library/mariadb:10.0.23
     command: mysqld --character-set-server=utf8 --collation-server=utf8_unicode_ci --init-connect='SET NAMES UTF8;' --innodb-flush-log-at-trx-commit=0
+    ports:
+      - 3306:3306
     environment:
       MYSQL_ROOT_PASSWORD: portus
 
   postgres:
     image: library/postgres:10-alpine
+    ports:
+      - 5432:5432
     environment:
       POSTGRES_PASSWORD: portus
 
   registry:
-    image: library/registry:2.6
+    image: library/registry:2.7
     environment:
       REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /registry_data
       REGISTRY_STORAGE_DELETE_ENABLED: "true"
@@ -94,6 +137,8 @@ services:
       REGISTRY_AUTH_TOKEN_REALM: http://${MACHINE_FQDN}:3000/v2/token
       REGISTRY_AUTH_TOKEN_SERVICE: ${MACHINE_FQDN}:${REGISTRY_PORT}
       REGISTRY_AUTH_TOKEN_ISSUER: ${MACHINE_FQDN}
+      REGISTRY_HTTP_TLS_CERTIFICATE: /certs/registry.crt
+      REGISTRY_HTTP_TLS_KEY: /certs/registry.key
 
       REGISTRY_NOTIFICATIONS_ENDPOINTS: >
         - name: portus
@@ -103,9 +148,12 @@ services:
           backoff: 1s
     volumes:
       - /registry_data
+      - ./certs:/certs:ro
       - ./examples/development/compose/portus.crt:/etc/docker/registry/portus.crt:ro
     ports:
       - ${REGISTRY_PORT}:5000
       - 5001:5001
     links:
       - portus
+    external_links:
+      - portus:portus.localhost.banzaicloud.io

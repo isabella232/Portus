@@ -45,6 +45,8 @@ class ScanResult < ApplicationRecord
   def self.add_vulnerabilities!(tag:, vulnerabilities:)
     ScanResult.where(tag: tag).destroy_all
 
+    print("vulnerabilities", vulnerabilities, "\n")
+
     vulnerabilities.each do |scanner, results|
       results.each do |v|
         break if v.blank?

@@ -398,6 +398,10 @@ security:
   dummy:
     server: ""
 
+  # Anchore Engine support (https://github.com/anchore/anchore-engine).
+  anchore:
+    server: ""
+
 # Allow anonymous (non-logged-in) users to explore the images available in your
 # Docker Registry. Only images on public namespaces will be shown.
 anonymous_browsing:

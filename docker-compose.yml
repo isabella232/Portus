@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 
 services:
   portus:
@@ -58,7 +58,7 @@ services:
       - PORTUS_SECURITY_ANCHORE_SERVER=http://anchore:8228
       - PORTUS_SECURITY_ANCHORE_USERNAME=admin
       - PORTUS_SECURITY_ANCHORE_PASSWORD=foobar
- 
+
       # Theoretically not needed, but cconfig's been buggy on this...
       - CCONFIG_PREFIX=PORTUS
 
@@ -139,8 +139,8 @@ services:
       REGISTRY_AUTH_TOKEN_REALM: http://${MACHINE_FQDN}:3000/v2/token
       REGISTRY_AUTH_TOKEN_SERVICE: ${MACHINE_FQDN}:${REGISTRY_PORT}
       REGISTRY_AUTH_TOKEN_ISSUER: ${MACHINE_FQDN}
-      REGISTRY_HTTP_TLS_CERTIFICATE: /certs/registry.crt
-      REGISTRY_HTTP_TLS_KEY: /certs/registry.key
+      REGISTRY_HTTP_TLS_CERTIFICATE: /etc/docker/registry/registry.crt
+      REGISTRY_HTTP_TLS_KEY: /etc/docker/registry/registry.key
 
       REGISTRY_NOTIFICATIONS_ENDPOINTS: >
         - name: portus
@@ -150,7 +150,8 @@ services:
           backoff: 1s
     volumes:
       - /registry_data
-      - ./certs:/certs:ro
+      - ./examples/development/compose/registry.crt:/etc/docker/registry/registry.crt:ro
+      - ./examples/development/compose/registry.key:/etc/docker/registry/registry.key:ro
       - ./examples/development/compose/portus.crt:/etc/docker/registry/portus.crt:ro
     ports:
       - ${REGISTRY_PORT}:5000

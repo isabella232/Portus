@@ -41,7 +41,7 @@ services:
     ports:
       - 5556:5556
     volumes:
-      - ./dex.yml:/dex.yml
+      - ./examples/compose/dex/dex.yml:/dex.yml
     environment:
       - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
       - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}

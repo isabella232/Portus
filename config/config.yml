@@ -401,6 +401,8 @@ security:
   # Anchore Engine support (https://github.com/anchore/anchore-engine).
   anchore:
     server: ""
+    username: ""
+    password: ""
 
 # Allow anonymous (non-logged-in) users to explore the images available in your
 # Docker Registry. Only images on public namespaces will be shown.

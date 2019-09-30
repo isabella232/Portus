@@ -8,12 +8,13 @@ module Portus
     # is meant to be used only for development/testing purposes.
     class Anchore < ::Portus::SecurityBackend::Base
 
+      def initialize(repo, tag, digest)
+        super(repo, tag, digest)
+        @username = APP_CONFIG["security"]["anchore"]["username"]
+        @password = APP_CONFIG["security"]["anchore"]["password"]
+      end
+
       def vulnerabilities(params)
-
-        print("anchore.vulnerabilities(repo:tag): ", @repo, ":", @tag, "@", @digest, "\n")
-
-        @username = "admin"
-        @password = "foobar"
 
         @registry_url = params[:registry_url]
 

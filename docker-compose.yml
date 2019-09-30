@@ -56,6 +56,8 @@ services:
       - PORTUS_MACHINE_FQDN_VALUE=${MACHINE_FQDN}
       - PORTUS_SECURITY_CLAIR_SERVER=http://clair:6060
       - PORTUS_SECURITY_ANCHORE_SERVER=http://anchore:8228
+      - PORTUS_SECURITY_ANCHORE_USERNAME=admin
+      - PORTUS_SECURITY_ANCHORE_PASSWORD=foobar
  
       # Theoretically not needed, but cconfig's been buggy on this...
       - CCONFIG_PREFIX=PORTUS

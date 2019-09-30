@@ -106,7 +106,7 @@ services:
     volumes:
       - /tmp:/tmp
       - ./examples/compose/clair/clair.yml:/clair.yml
-    command: [-config, /clair.yml, -log-level=debug]
+    command: [-config, /clair.yml, -log-level=debug, "-insecure-tls=true"]
 
   db:
     image: library/mariadb:10.0.23

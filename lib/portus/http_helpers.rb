@@ -160,9 +160,16 @@ module Portus
                       APP_CONFIG["registry"]["read_timeout"]["value"]]
                    end
 
+      verify_mode = case APP_CONFIG["registry"]["openssl_verify_mode"]
+                    when "none"
+                      OpenSSL::SSL::VERIFY_NONE
+                    else
+                      OpenSSL::SSL::VERIFY_PEER
+                    end
+
       options = {
         use_ssl:      uri.scheme == "https",
-        verify_mode:  OpenSSL::SSL::VERIFY_NONE, # TODO CONFIG
+        verify_mode:  verify_mode,
         open_timeout: open.to_i,
         read_timeout: read.to_i
       }

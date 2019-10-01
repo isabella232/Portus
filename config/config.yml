@@ -303,6 +303,8 @@ registry:
   timeout:
     value: 2
 
+  openssl_verify_mode: "peer"
+
   # Set timeout in seconds for read response from registry.
   read_timeout:
     value: 120
